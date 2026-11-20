@@ -15,6 +15,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/events/lunch-and-learn",
     "/events/pack-with-purpose",
     "/events/christmas-networking",
+    "/events/christmas-toy-drive",
     "/give-donate",
     "/donate",
     "/membership",

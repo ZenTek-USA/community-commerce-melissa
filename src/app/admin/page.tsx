@@ -58,6 +58,7 @@ type AdminEvent = {
   address?: string;
   category: string;
   isPast: boolean;
+  registrationRequired?: boolean;
   href?: string;
 };
 
@@ -854,7 +855,9 @@ export default function AdminPage() {
                                 🎖️ {stats.memberGuests} members · {stats.nonMemberGuests} guests
                               </span>
                               <span className="text-slate-300 font-semibold">
-                                {stats.totalAmountCents > 0
+                                {event.registrationRequired === false && stats.totalSignups === 0
+                                  ? "Registration Not Required"
+                                  : stats.totalAmountCents > 0
                                   ? `$${(stats.totalAmountCents / 100).toFixed(2)}`
                                   : stats.businessInterestSignups > 0
                                   ? `${stats.businessInterestSignups} booth inquiries`

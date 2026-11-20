@@ -142,16 +142,19 @@ export default function EventRegistrationModal({
   const isTentOrTreat = event.id === "tent-or-treat";
   const isOktoberfest = event.id === "oktoberfest";
   const isChristmasNetworking = event.id === "christmas-networking";
+  const isChristmasToyDrive = event.id === "christmas-toy-drive";
   const isMemberGuestMixer = isOktoberfest || isChristmasNetworking;
   const isLunchAndLearn = event.id === "lunch-and-learn";
   const isPackWithPurpose = event.id === "pack-with-purpose";
-  const calendarDates = isChristmasNetworking
-    ? "20261201T000000Z/20261201T020000Z"
-    : isPackWithPurpose
-      ? "20261116T170000Z/20261116T190000Z"
-      : isTentOrTreat
-        ? "20261031T190000Z/20261031T220000Z"
-        : "20261026T230000Z/20261027T010000Z";
+  const calendarDates = isChristmasToyDrive
+    ? "20261218T233000Z/20261219T013000Z"
+    : isChristmasNetworking
+      ? "20261201T000000Z/20261201T020000Z"
+      : isPackWithPurpose
+        ? "20261116T170000Z/20261116T190000Z"
+        : isTentOrTreat
+          ? "20261031T190000Z/20261031T220000Z"
+          : "20261026T230000Z/20261027T010000Z";
 
   const handlePathChange = (newPath: EventRegistrationPath) => {
     setActivePath(newPath);
@@ -339,7 +342,56 @@ export default function EventRegistrationModal({
 
         {/* Modal Body / Scrollable Content */}
         <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-5">
-          {success ? (
+          {event.registrationRequired === false ? (
+            <div className="text-center py-4 sm:py-6 space-y-5">
+              <div className="w-14 h-14 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-8 h-8" />
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-xl sm:text-2xl font-extrabold font-outfit uppercase text-white">
+                  Registration Not Required
+                </h3>
+                <p className="text-slate-300 text-sm max-w-md mx-auto leading-relaxed">
+                  {event.description}
+                </p>
+              </div>
+
+              <div className="bg-[#151922] border border-white/10 rounded-xl p-4 text-xs space-y-2.5 text-left max-w-md mx-auto">
+                <div className="flex items-center gap-2 text-slate-300">
+                  <Calendar className="w-4 h-4 text-red-400 shrink-0" />
+                  <span>{event.dateLabel} · {event.time}</span>
+                </div>
+                <div className="flex items-start gap-2 text-slate-300">
+                  <MapPin className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                  <span>{event.location}{event.address ? ` · ${event.address}` : ""}</span>
+                </div>
+              </div>
+
+              <div className="pt-2 flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+                <a
+                  href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
+                    event.title
+                  )}&dates=${calendarDates}&details=${encodeURIComponent(
+                    event.description
+                  )}&location=${encodeURIComponent(event.location + (event.address ? `, ${event.address}` : ""))}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full btn-red py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] transition"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  Add to Calendar
+                </a>
+
+                <button
+                  onClick={onClose}
+                  className="w-full bg-white/10 hover:bg-white/20 text-white font-bold py-2.5 px-4 rounded-xl text-xs uppercase tracking-wider transition border border-white/10"
+                >
+                  Close Window
+                </button>
+              </div>
+            </div>
+          ) : success ? (
             <div className="text-center py-6 sm:py-8 space-y-5 animate-in zoom-in-95 duration-200">
               <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center mx-auto shadow-lg shadow-emerald-950/40">
                 <CheckCircle2 className="w-9 h-9" />

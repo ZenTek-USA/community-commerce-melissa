@@ -30,6 +30,7 @@ import {
   tentPromoCodeMatches,
   tentSpaceChargeLabel,
   tentSpaceOriginalPriceLabel,
+  isEventRegistrationRequired,
   isPaidEventPath,
   isPastEvent,
   maxPartySize,
@@ -39,9 +40,9 @@ import {
 } from "./site-events.ts";
 
 describe("site events catalog", () => {
-  it("lists Lunch & Learn, Oktoberfest, Pack with Purpose, and Christmas Networking Night, and excludes cancelled Tent or Treat", () => {
+  it("lists Lunch & Learn, Oktoberfest, Pack with Purpose, Christmas Networking Night, and Christmas Toy Drive, and excludes cancelled Tent or Treat", () => {
     const items = siteEventsAsItems();
-    assert.equal(items.length, 4);
+    assert.equal(items.length, 5);
     assert.equal(getSiteEvent("tent-or-treat"), null);
     assert.equal(items.find((item) => item.id === "evt-tent-or-treat"), undefined);
     assert.equal(getSiteEvent("pack-with-purpose")?.title, "Pack with Purpose: A Give-Back Lunch & Learn");
@@ -52,11 +53,40 @@ describe("site events catalog", () => {
     assert.equal(getSiteEvent("christmas-networking-night")?.id, "christmas-networking");
     assert.equal(getSiteEvent("christmas-networking")?.image, "/events/christmas-networking-event.jpg");
     assert.equal(getSiteEvent("christmas-networking")?.href, "/events/christmas-networking");
+    assert.equal(getSiteEvent("christmas-toy-drive")?.title, "Christmas Toy Drive & Community Event");
+    assert.equal(getSiteEvent("toy-drive")?.id, "christmas-toy-drive");
+    assert.equal(getSiteEvent("toys-for-tots")?.id, "christmas-toy-drive");
+    assert.equal(getSiteEvent("christmas-toy-drive")?.date, "2026-12-18");
+    assert.equal(getSiteEvent("christmas-toy-drive")?.time, "5:30 PM - 7:30 PM");
+    assert.equal(getSiteEvent("christmas-toy-drive")?.location, "Buffalo Joe's Barber Lounge");
+    assert.equal(getSiteEvent("christmas-toy-drive")?.address, "2803 Central St., Melissa, TX 75454");
+    assert.equal(getSiteEvent("christmas-toy-drive")?.image, "/events/christmas-toy-drive.jpg");
+    assert.equal(getSiteEvent("christmas-toy-drive")?.href, "/events/christmas-toy-drive");
+    assert.equal(getSiteEvent("christmas-toy-drive")?.registrationRequired, false);
+    assert.equal(isEventRegistrationRequired("christmas-toy-drive"), false);
+    assert.equal(isEventRegistrationRequired("christmas-networking"), true);
     assert.equal(getSiteEvent("lunch-and-learn")?.title, "Lunch & Learn: Building a Stronger Community");
     assert.equal(getSiteEvent("oktoberfest")?.title, "Oktoberfest Networking Night");
     assert.equal(getSiteEvent("lunch-and-learn")?.href, "/events/lunch-and-learn");
     assert.equal(items.find((item) => item.id === "evt-oktoberfest")?.registerHref, "/events/oktoberfest");
     assert.equal(items.find((item) => item.id === "evt-christmas-networking")?.registerHref, "/events/christmas-networking");
+    const toyDriveItem = items.find((item) => item.id === "evt-christmas-toy-drive");
+    assert.equal(toyDriveItem?.registerHref, "/events/christmas-toy-drive");
+    assert.equal(toyDriveItem?.registrationRequired, false);
+  });
+
+  it("marks Christmas Toy Drive as Registration Not Required and rejects sign-up submissions", () => {
+    assert.deepEqual(allowedPathsForEvent("christmas-toy-drive"), []);
+    const attempt = validateEventRegistrationInput({
+      eventId: "christmas-toy-drive",
+      path: "attendee",
+      name: "Jordan Hale",
+      email: "jordan@example.com",
+    });
+    assert.equal(attempt.ok, false);
+    if (!attempt.ok) {
+      assert.equal(attempt.error, "Registration is not required for this event.");
+    }
   });
 
   it("makes Christmas Networking Night free for members and $20 for non-members, with VIPTIX coupon waiving guest fee", () => {
@@ -404,7 +434,7 @@ describe("site events catalog", () => {
 
   it("filters out past events and returns at most the next 3 upcoming events chronologically", () => {
     const items = siteEventsAsItems();
-    // On Oct 20, 2026, Oct 12 Lunch & Learn is past; Oct 26 Oktoberfest, Nov 16 Pack with Purpose, and Nov 30 Christmas Networking Night remain
+    // On Oct 20, 2026, Oct 12 Lunch & Learn is past; the next 3 are Oct 26 Oktoberfest, Nov 16 Pack with Purpose, and Nov 30 Christmas Networking Night
     const oct20 = new Date("2026-10-20T12:00:00-05:00");
     const nextOnOct20 = getNextUpcomingEvents(items, 3, oct20);
     assert.deepEqual(
@@ -412,14 +442,21 @@ describe("site events catalog", () => {
       ["evt-oktoberfest", "evt-pack-with-purpose", "evt-christmas-networking"],
     );
 
-    // After Oct 26 passes (e.g. Oct 28), only 2 upcoming events remain, leaving the 3rd slot empty
+    // After Oct 26 passes (e.g. Oct 28), the next 3 are Nov 16 Pack with Purpose, Nov 30 Christmas Networking Night, and Dec 18 Christmas Toy Drive
     const oct28 = new Date("2026-10-28T12:00:00-05:00");
     assert.deepEqual(
       getNextUpcomingEvents(items, 3, oct28).map((e) => e.id),
-      ["evt-pack-with-purpose", "evt-christmas-networking"],
+      ["evt-pack-with-purpose", "evt-christmas-networking", "evt-christmas-toy-drive"],
     );
 
-    // When a 4th and 5th upcoming event exist, only the next 3 in chronological order are returned
+    // After Nov 16 passes (e.g. Nov 19), only Nov 30 Christmas Networking Night and Dec 18 Christmas Toy Drive remain, leaving the 3rd slot empty
+    const nov19 = new Date("2026-11-19T12:00:00-06:00");
+    assert.deepEqual(
+      getNextUpcomingEvents(items, 3, nov19).map((e) => e.id),
+      ["evt-christmas-networking", "evt-christmas-toy-drive"],
+    );
+
+    // When additional upcoming events exist, only the next 3 in chronological order are returned
     const withMore = [
       ...items,
       { ...items[0], id: "evt-dec", date: "2026-12-10", title: "December Mixer" },
@@ -430,10 +467,11 @@ describe("site events catalog", () => {
       nextThree.map((e) => e.id),
       ["evt-oktoberfest", "evt-nov-early", "evt-pack-with-purpose"],
     );
-    assert.equal(getUpcomingEvents(withMore, oct20).length, 5);
+    assert.equal(getUpcomingEvents(withMore, oct20).length, 6);
     assert.equal(resolveSiteEventForItem(nextOnOct20[0])?.id, "oktoberfest");
     assert.equal(resolveSiteEventForItem(nextOnOct20[1])?.id, "pack-with-purpose");
     assert.equal(resolveSiteEventForItem(nextOnOct20[2])?.id, "christmas-networking");
     assert.equal(formatEventDateLabel("2026-10-26"), "Monday, October 26, 2026");
+    assert.equal(formatEventDateLabel("2026-12-18"), "Friday, December 18, 2026");
   });
 });

@@ -70,6 +70,7 @@ export async function GET(request: Request) {
     address: event.address || "",
     category: event.category,
     isPast: isPastEvent(event),
+    registrationRequired: event.registrationRequired !== false,
     href: event.href,
   }));
 
@@ -91,6 +92,7 @@ export async function GET(request: Request) {
       address: "4101 Liberty Way, Melissa, TX 75454",
       category: "Community Events",
       isPast: false,
+      registrationRequired: true,
       href: "",
     });
   }
@@ -110,6 +112,7 @@ export async function GET(request: Request) {
         address: "",
         category: "Past Events",
         isPast: true,
+        registrationRequired: true,
         href: "",
       });
     }

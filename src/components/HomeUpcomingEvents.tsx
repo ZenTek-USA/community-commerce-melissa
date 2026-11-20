@@ -12,6 +12,7 @@ import {
   Ticket,
   Sparkles,
   ExternalLink,
+  CheckCircle2,
 } from "lucide-react";
 import { MOCK_EVENTS } from "@/data/mockData";
 import {
@@ -71,6 +72,9 @@ export default function HomeUpcomingEvents({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-stretch">
           {events.map((evt, index) => {
             const siteEvent = resolveSiteEventForItem(evt);
+            const isRegistrationNotRequired =
+              evt.registrationRequired === false || siteEvent?.registrationRequired === false;
+            const isToyDrive = siteEvent?.id === "christmas-toy-drive";
             const isLunch =
               siteEvent?.id === "lunch-and-learn" || siteEvent?.id === "pack-with-purpose";
             const isPackWithPurpose = siteEvent?.id === "pack-with-purpose";
@@ -156,8 +160,25 @@ export default function HomeUpcomingEvents({
 
                 {/* Card Actions Footer */}
                 <div className="p-6 pt-2 border-t border-white/10 bg-[#12161f] space-y-2.5">
-                  {/* Lunch & Learn CTA */}
-                  {isLunch && siteEvent ? (
+                  {isRegistrationNotRequired ? (
+                    <div className="space-y-2">
+                      <div className="w-full py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider bg-white/5 border border-white/15 text-slate-100 flex items-center justify-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <span>Registration Not Required</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs pt-1 px-1">
+                        <span className="text-emerald-400 font-bold text-[11px] uppercase">
+                          {isToyDrive ? "Toys for Tots · Open to All" : "Open to the Community"}
+                        </span>
+                        <Link
+                          href={detailsHref}
+                          className="text-slate-400 hover:text-white underline underline-offset-2 transition"
+                        >
+                          Event Details →
+                        </Link>
+                      </div>
+                    </div>
+                  ) : isLunch && siteEvent ? (
                     <div className="space-y-2">
                       <button
                         onClick={() => onOpenRegistration(siteEvent, "attendee")}

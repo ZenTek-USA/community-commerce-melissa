@@ -110,7 +110,8 @@ export type SiteEventId =
   | "tent-or-treat"
   | "lunch-and-learn"
   | "pack-with-purpose"
-  | "christmas-networking";
+  | "christmas-networking"
+  | "christmas-toy-drive";
 export type EventRegistrationPath = "member" | "guest" | "attendee" | "sponsor";
 export type EventSignupKind = "attendance" | "business_interest";
 export type EventMembershipStatus = "member" | "non_member";
@@ -134,6 +135,7 @@ export type SiteEvent = {
   image: string;
   businessImage?: string;
   isFeatured: boolean;
+  registrationRequired?: boolean;
   href: string;
 };
 
@@ -159,6 +161,10 @@ export function resolvePackWithPurposeImage(): string {
 
 export function resolveChristmasNetworkingImage(): string {
   return "/events/christmas-networking-event.jpg";
+}
+
+export function resolveChristmasToyDriveImage(): string {
+  return "/events/christmas-toy-drive.jpg";
 }
 
 export const SITE_EVENTS: SiteEvent[] = [
@@ -237,6 +243,26 @@ export const SITE_EVENTS: SiteEvent[] = [
     isFeatured: true,
     href: "/events/christmas-networking",
   },
+  {
+    id: "christmas-toy-drive",
+    slug: "christmas-toy-drive",
+    title: "Christmas Toy Drive & Community Event",
+    kicker: "Toys for Tots Community Event",
+    date: "2026-12-18",
+    dateLabel: "Friday, December 18, 2026",
+    month: "DEC",
+    day: "18",
+    time: "5:30 PM - 7:30 PM",
+    location: "Buffalo Joe's Barber Lounge",
+    address: "2803 Central St., Melissa, TX 75454",
+    category: "Community Events",
+    description:
+      "Join Buffalo Joe's Barber Lounge and Community Commerce Melissa for a Toys for Tots Christmas Toy Drive and community event! Please donate new (unwrapped) toys for local children in our community. Registration not required.",
+    image: resolveChristmasToyDriveImage(),
+    isFeatured: true,
+    registrationRequired: false,
+    href: "/events/christmas-toy-drive",
+  },
 ];
 
 const CHICAGO_DATE = new Intl.DateTimeFormat("en-CA", {
@@ -271,7 +297,26 @@ export function getSiteEvent(slug: string | undefined | null): SiteEvent | null 
   ) {
     return SITE_EVENTS.find((event) => event.slug === "christmas-networking") || null;
   }
+  if (
+    normalized === "toy-drive" ||
+    normalized === "toys-for-tots" ||
+    normalized === "christmas-toy-drive-and-community-event"
+  ) {
+    return SITE_EVENTS.find((event) => event.slug === "christmas-toy-drive") || null;
+  }
   return SITE_EVENTS.find((event) => event.slug === normalized) || null;
+}
+
+export function isEventRegistrationRequired(
+  eventOrId: { registrationRequired?: boolean } | string | null | undefined,
+): boolean {
+  if (!eventOrId) return true;
+  if (typeof eventOrId === "string") {
+    const found = getSiteEvent(eventOrId);
+    if (found) return found.registrationRequired !== false;
+    return eventOrId !== "christmas-toy-drive";
+  }
+  return eventOrId.registrationRequired !== false;
 }
 
 export function getUpcomingEvents<T extends { date: string; endDate?: string; isPast?: boolean }>(
@@ -349,11 +394,13 @@ export function siteEventsAsItems() {
     description: event.description,
     image: event.image,
     isFeatured: event.isFeatured,
+    registrationRequired: event.registrationRequired !== false,
     registerHref: event.href,
   }));
 }
 
 export function allowedPathsForEvent(eventId: SiteEventId): EventRegistrationPath[] {
+  if (eventId === "christmas-toy-drive") return [];
   if (eventId === "oktoberfest" || eventId === "christmas-networking") return ["member", "guest"];
   if (eventId === "tent-or-treat") return ["attendee", "sponsor"];
   return ["attendee"];
@@ -549,6 +596,9 @@ export function validateEventRegistrationInput(input: unknown): {
   const body = input && typeof input === "object" ? (input as Record<string, unknown>) : {};
   const event = getSiteEvent(String(body.eventId || body.slug || ""));
   if (!event) return { ok: false, error: "Choose a current Community Commerce event." };
+  if (!isEventRegistrationRequired(event)) {
+    return { ok: false, error: "Registration is not required for this event." };
+  }
 
   const path = String(body.path || "").trim() as EventRegistrationPath;
   if (!allowedPathsForEvent(event.id).includes(path)) {
@@ -635,6 +685,9 @@ export function eventRegistrationFormType(
   if (eventId === "pack-with-purpose") {
     return "Pack with Purpose Lunch & Learn Registration";
   }
+  if (eventId === "christmas-toy-drive") {
+    return "Christmas Toy Drive & Community Event";
+  }
   if (path === "sponsor") {
     if (getTentSpaceOption(spaceOption).id === "standard" && tentPromoCodeMatches(promoCode)) {
       return `Tent or Treat Business Tent Registration (Complimentary — Code ${TENT_OR_TREAT_PROMO_CODE})`;
@@ -660,6 +713,9 @@ export function eventConfirmationCopy(eventId: SiteEventId, path: EventRegistrat
   }
   if (eventId === "pack-with-purpose") {
     return "You're registered for Pack with Purpose: A Give-Back Lunch & Learn on Monday, November 16, 2026 (11:00 AM - 1:00 PM) at First United Bank in McKinney. Free lunch is included, gifted by Portillo's!";
+  }
+  if (eventId === "christmas-toy-drive") {
+    return "Registration is not required — see you at Buffalo Joe's Barber Lounge on Friday, December 18, 2026 from 5:30 PM to 7:30 PM!";
   }
   if (path === "sponsor") {
     return "Your tent space registration has been received. Setup is Saturday, October 31, 2026 from 12:30 PM to 2:00 PM at Melissa Lake Park.";

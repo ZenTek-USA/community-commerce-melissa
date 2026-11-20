@@ -9,6 +9,8 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
+  ExternalLink,
+  Gift,
   Loader2,
   MapPin,
   Ticket,
@@ -183,6 +185,20 @@ function EventDetailClient({ event }: { event: SiteEvent }) {
                       Free lunch included — gifted by <strong>Portillo&apos;s</strong> and hosted at <strong>First United Bank</strong> in McKinney.
                     </p>
                   </div>
+                ) : event.id === "christmas-toy-drive" ? (
+                  <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
+                    <p className="text-xs font-bold uppercase tracking-widest text-red-700">Toys for Tots · Community Event</p>
+                    <p className="text-sm text-slate-700">
+                      Hosted by <strong>Buffalo Joe&apos;s Barber Lounge</strong> in proud partnership with <strong>Community Commerce Melissa</strong>.
+                    </p>
+                    <div className="pt-2 border-t border-slate-100 space-y-1.5 text-sm text-slate-700">
+                      <p><strong>Toy Donations:</strong> Please donate new (unwrapped) toys for local children in our community.</p>
+                      <p><strong>Admission:</strong> Free &amp; open to everyone — registration not required.</p>
+                    </div>
+                    <p className="text-xs text-slate-500 pt-1">
+                      Stop by Friday, December 18, 2026 from 5:30 PM – 7:30 PM at 2803 Central St., Melissa, TX.
+                    </p>
+                  </div>
                 ) : (
                   <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-2">
                     <p className="text-xs font-bold uppercase tracking-widest text-red-700">Free for attendees</p>
@@ -195,7 +211,9 @@ function EventDetailClient({ event }: { event: SiteEvent }) {
               </div>
 
               <div className="lg:col-span-7 space-y-6">
-                {event.id === "oktoberfest" || event.id === "christmas-networking" ? (
+                {event.registrationRequired === false ? (
+                  <NoRegistrationRequiredCard event={event} />
+                ) : event.id === "oktoberfest" || event.id === "christmas-networking" ? (
                   <OktoberfestForm key={portal.member?.email || "guest"} event={event} portal={portal} />
                 ) : (
                   <TentForm
@@ -223,6 +241,103 @@ function EventDetailClient({ event }: { event: SiteEvent }) {
 
       <Footer />
       <MemberModal isOpen={isJoinModalOpen} onClose={() => setIsJoinModalOpen(false)} />
+    </div>
+  );
+}
+
+function NoRegistrationRequiredCard({ event }: { event: SiteEvent }) {
+  const mapsHref = `https://maps.google.com/?q=${encodeURIComponent(
+    event.address ? `${event.location}, ${event.address}` : event.location,
+  )}`;
+  const calendarDates =
+    event.id === "christmas-toy-drive"
+      ? "20261218T233000Z/20261219T013000Z"
+      : "";
+  const calendarHref = calendarDates
+    ? `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
+        event.title,
+      )}&dates=${calendarDates}&details=${encodeURIComponent(
+        event.description,
+      )}&location=${encodeURIComponent(
+        event.location + (event.address ? `, ${event.address}` : ""),
+      )}`
+    : "";
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-5">
+      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-extrabold uppercase tracking-wider">
+        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+        Registration Not Required
+      </div>
+
+      <div className="space-y-2">
+        <h2 className="text-2xl sm:text-3xl font-extrabold font-outfit uppercase tracking-tight text-slate-900">
+          Registration Not Required
+        </h2>
+        <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
+          No sign-up, ticket, or RSVP is needed to attend! Simply drop in and join neighbors, families, and local business owners at{" "}
+          <strong className="text-slate-900">{event.location}</strong> on{" "}
+          <strong className="text-slate-900">{event.dateLabel}</strong> between{" "}
+          <strong className="text-slate-900">{event.time}</strong>.
+        </p>
+      </div>
+
+      {event.id === "christmas-toy-drive" && (
+        <div className="bg-red-50/70 border border-red-200/80 rounded-xl p-4 sm:p-5 flex items-start gap-3.5">
+          <div className="w-9 h-9 rounded-lg bg-red-700 text-white flex items-center justify-center shrink-0 mt-0.5">
+            <Gift className="w-4 h-4" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs font-extrabold uppercase tracking-wider text-red-800">
+              Toys for Tots Donation Drive
+            </p>
+            <p className="text-sm text-slate-700 leading-relaxed">
+              Please donate <strong>new (unwrapped) toys</strong> for local children in our community.
+            </p>
+          </div>
+        </div>
+      )}
+
+      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2.5 text-sm text-slate-700">
+        <div className="flex items-center gap-2.5">
+          <Calendar className="w-4 h-4 text-red-600 shrink-0" />
+          <span><strong>Date:</strong> {event.dateLabel}</span>
+        </div>
+        <div className="flex items-center gap-2.5">
+          <Clock className="w-4 h-4 text-red-600 shrink-0" />
+          <span><strong>Time:</strong> {event.time}</span>
+        </div>
+        <div className="flex items-start gap-2.5">
+          <MapPin className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+          <span>
+            <strong>Location:</strong> {event.location}
+            {event.address ? ` · ${event.address}` : ""}
+          </span>
+        </div>
+      </div>
+
+      <div className="pt-2 flex flex-wrap items-center gap-3">
+        <a
+          href={mapsHref}
+          target="_blank"
+          rel="noreferrer"
+          className="btn-red px-5 py-3 rounded-xl text-xs font-bold uppercase tracking-wider shadow-md hover:scale-[1.02] transition inline-flex items-center gap-2"
+        >
+          <MapPin className="w-4 h-4" />
+          <span>Get Directions</span>
+        </a>
+        {calendarHref && (
+          <a
+            href={calendarHref}
+            target="_blank"
+            rel="noreferrer"
+            className="px-5 py-3 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 text-xs font-bold uppercase tracking-wider transition inline-flex items-center gap-2"
+          >
+            <ExternalLink className="w-3.5 h-3.5 text-red-600" />
+            <span>Add to Calendar</span>
+          </a>
+        )}
+      </div>
     </div>
   );
 }

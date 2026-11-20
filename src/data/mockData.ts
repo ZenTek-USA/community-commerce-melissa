@@ -16,6 +16,7 @@ export interface EventItem {
   isPast?: boolean;
   registerUrl?: string;
   registerHref?: string;
+  registrationRequired?: boolean;
   endDate?: string;
 }
 
